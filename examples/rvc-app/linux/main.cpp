@@ -18,6 +18,7 @@
 #include "RvcAppCommandDelegate.h"
 #include "rvc-device.h"
 #include <AppMain.h>
+#include "../../rvc-common/include/RvcAIInterface.h"
 
 #include <string>
 
@@ -48,6 +49,14 @@ void ApplicationInit()
     gRvcDevice->Init();
 
     sRvcAppCommandDelegate.SetRvcDevice(gRvcDevice);
+
+    // Initialize and run the On-Device AI interface
+    RvcAIInterface aiInterface;
+    if (!aiInterface.InitAI())
+    {
+        std::cerr << "FATAL ERROR: Failed to initialize AI Interface." << std::endl;
+    }
+    aiInterface.RunInferenceLoop();
 }
 
 void ApplicationShutdown()

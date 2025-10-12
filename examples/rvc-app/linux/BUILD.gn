@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//build_overrides/pigweed.gni")
 import("//build_overrides/build.gni")
 import("//build_overrides/chip.gni")
 
@@ -29,6 +30,7 @@ executable("chip-rvc-app") {
     "${chip_root}/examples/rvc-app/rvc-common/src/rvc-operational-state-delegate.cpp",
     "${chip_root}/examples/rvc-app/rvc-common/src/rvc-service-area-delegate.cpp",
     "${chip_root}/examples/rvc-app/rvc-common/src/rvc-service-area-storage-delegate.cpp",
+    "${chip_root}/examples/rvc-app/rvc-common/src/RvcAIInterface.cpp",
     "RvcAppCommandDelegate.cpp",
     "include/CHIPProjectAppConfig.h",
     "main.cpp",
@@ -39,11 +41,13 @@ executable("chip-rvc-app") {
     "${chip_root}/examples/rvc-app/rvc-common",
     "${chip_root}/src/lib",
     "${chip_root}/third_party/jsoncpp",
+    "$dir_pw_third_party/tensorflow:pw_third_party.tensorflow.lite.micro.all_ops_resolver",
   ]
 
   include_dirs = [
     "include",
     "${chip_root}/examples/rvc-app/rvc-common/include",
+    "${chip_root}/examples/rvc-app/rvc-common/third_party",
   ]
   output_dir = root_out_dir
 }
