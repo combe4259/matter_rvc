@@ -51,6 +51,6 @@ done
 set -x
 env
 
-gn gen --check --fail-on-unused-args --root="$EXAMPLE_DIR" "$OUTPUT_DIR" --args="${GN_ARGS[*]}"
+gn gen --check --fail-on-unused-args "$OUTPUT_DIR" --args="${GN_ARGS[@]}"
 
 ninja -C "$OUTPUT_DIR" "${NINJA_ARGS[@]}"

@@ -1,0 +1,2 @@
+ninja: Entering directory `out/rvc-app-new'
+ninja: error: unknown target 'chip-rvc-app'

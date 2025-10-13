@@ -6,8 +6,8 @@
 // Forward declarations to avoid including heavy TFLM headers here
 namespace tflite {
     class MicroInterpreter;
-    class Model;
-    class AllOpsResolver;
+    struct Model;
+    template <unsigned int tOpCount> class MicroMutableOpResolver;
 }
 struct TfLiteTensor;
 
@@ -27,7 +27,7 @@ private:
     TfLiteTensor* mOutputTensor;
 
     // Using a unique_ptr for the resolver to manage its lifecycle
-    std::unique_ptr<tflite::AllOpsResolver> mResolver;
+    std::unique_ptr<tflite::MicroMutableOpResolver<10> > mResolver;
 
     // A memory buffer for TFLM to use for input, output, and intermediate arrays.
     std::unique_ptr<uint8_t[]> mTensorArena;

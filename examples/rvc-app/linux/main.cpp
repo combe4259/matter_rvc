@@ -18,6 +18,7 @@
 #include "RvcAppCommandDelegate.h"
 #include "rvc-device.h"
 #include <AppMain.h>
+#include <iostream>
 #include "../../rvc-common/include/RvcAIInterface.h"
 
 #include <string>

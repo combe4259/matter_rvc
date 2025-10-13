@@ -1,13 +1,14 @@
 #include "RvcAIInterface.h"
 
 #include "model_data.h"
-#include "tensorflow/lite/micro/all_ops_resolver.h"
+#include "tensorflow/lite/micro/micro_mutable_op_resolver.h"
 #include "tensorflow/lite/micro/micro_interpreter.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
-#include "stb/stb_image_resize.h"
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb/stb_image_resize2.h"
 
 #include <iostream>
 #include <vector>
@@ -33,10 +34,18 @@ bool RvcAIInterface::InitAI()
 {
     std::cout << "Initializing TFLM..." << std::endl;
 
-    mModel = tflite::GetModel(g_model_data);
+    mModel = tflite::GetModel(yolov8n_full_integer_quant_tflite);
     if (mModel->version() != TFLITE_SCHEMA_VERSION) { std::cerr << "Error: Model schema version mismatch." << std::endl; return false; }
 
-    mResolver = std::make_unique<tflite::AllOpsResolver>();
+    mResolver = std::make_unique<tflite::MicroMutableOpResolver<10>>();
+    mResolver->AddConv2D();
+    mResolver->AddDepthwiseConv2D();
+    mResolver->AddFullyConnected();
+    mResolver->AddMaxPool2D();
+    mResolver->AddSoftmax();
+    mResolver->AddAdd();
+    mResolver->AddReshape();
+    mResolver->AddDequantize();
     mTensorArena = std::make_unique<uint8_t[]>(kTensorArenaSize);
     if (!mTensorArena) { std::cerr << "Error: Failed to allocate tensor arena." << std::endl; return false; }
 
@@ -67,11 +76,11 @@ void RvcAIInterface::RunInferenceLoop()
     int target_width = mInputTensor->dims->data[2];
     int target_channels = mInputTensor->dims->data[3];
     std::vector<uint8_t> img_resized(target_height * target_width * target_channels);
-    stbir_resize_uint8(img_original, original_width, original_height, 0, img_resized.data(), target_width, target_height, 0, target_channels);
+    stbir_resize_uint8_srgb(img_original, original_width, original_height, 0, img_resized.data(), target_width, target_height, 0, STBIR_RGB);
     stbi_image_free(img_original);
 
     // 3. Quantize and copy to input tensor
-    for (int i = 0; i < img_resized.size(); ++i) {
+    for (size_t i = 0; i < img_resized.size(); ++i) {
         mInputTensor->data.int8[i] = (int8_t)(img_resized[i] - 128);
     }
 

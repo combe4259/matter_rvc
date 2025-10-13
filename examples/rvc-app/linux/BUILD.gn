@@ -41,7 +41,7 @@ executable("chip-rvc-app") {
     "${chip_root}/examples/rvc-app/rvc-common",
     "${chip_root}/src/lib",
     "${chip_root}/third_party/jsoncpp",
-    "$dir_pw_third_party/tensorflow:pw_third_party.tensorflow.lite.micro.all_ops_resolver",
+    "../../../third_party/tflite-micro:tflite_micro",
   ]
 
   include_dirs = [
@@ -50,6 +50,12 @@ executable("chip-rvc-app") {
     "${chip_root}/examples/rvc-app/rvc-common/third_party",
   ]
   output_dir = root_out_dir
+
+  cflags = [
+    "-Wno-implicit-int-conversion",
+    "-Wno-sign-compare",
+    "-D__ARM_NEON_FP=0",
+  ]
 }
 
 group("linux") {
