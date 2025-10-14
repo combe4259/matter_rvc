@@ -31,6 +31,7 @@ executable("chip-rvc-app") {
     "${chip_root}/examples/rvc-app/rvc-common/src/rvc-service-area-delegate.cpp",
     "${chip_root}/examples/rvc-app/rvc-common/src/rvc-service-area-storage-delegate.cpp",
     "${chip_root}/examples/rvc-app/rvc-common/src/RvcAIInterface.cpp",
+    "${chip_root}/examples/rvc-app/rvc-common/src/RvcAITrainer.cpp",
     "RvcAppCommandDelegate.cpp",
     "include/CHIPProjectAppConfig.h",
     "main.cpp",
@@ -58,8 +59,123 @@ executable("chip-rvc-app") {
   ]
 }
 
+# Test executable for AI training capabilities
+executable("test-rvc-training") {
+  sources = [
+    "${chip_root}/examples/rvc-app/rvc-common/src/RvcAIInterface.cpp",
+    "${chip_root}/examples/rvc-app/rvc-common/src/RvcAITrainer.cpp",
+    "test_training.cpp",
+  ]
+
+  deps = [
+    "${chip_root}/third_party/tflite-micro:tflite_micro",
+  ]
+
+  include_dirs = [
+    "include",
+    "${chip_root}/examples/rvc-app/rvc-common/include",
+    "${chip_root}/examples/rvc-app/rvc-common/third_party",
+  ]
+
+  output_dir = root_out_dir
+
+  cflags = [
+    "-Wno-implicit-int-conversion",
+    "-Wno-sign-compare",
+    "-D__ARM_NEON_FP=0",
+  ]
+}
+
 group("linux") {
   deps = [ ":chip-rvc-app" ]
+}
+
+# Tensor inspector for finding weight tensors
+executable("inspect-tensors") {
+  sources = [
+    "${chip_root}/examples/rvc-app/rvc-common/src/RvcAIInterface.cpp",
+    "inspect_tensors.cpp",
+  ]
+
+  deps = [
+    "${chip_root}/third_party/tflite-micro:tflite_micro",
+  ]
+
+  include_dirs = [
+    "include",
+    "${chip_root}/examples/rvc-app/rvc-common/include",
+    "${chip_root}/examples/rvc-app/rvc-common/third_party",
+  ]
+
+  output_dir = root_out_dir
+
+  cflags = [
+    "-Wno-implicit-int-conversion",
+    "-Wno-sign-compare",
+    "-D__ARM_NEON_FP=0",
+  ]
+}
+
+# Debug tool for weight modification
+executable("debug-weights") {
+  sources = [
+    "${chip_root}/examples/rvc-app/rvc-common/src/RvcAIInterface.cpp",
+    "debug_weights.cpp",
+  ]
+
+  deps = [
+    "${chip_root}/third_party/tflite-micro:tflite_micro",
+  ]
+
+  include_dirs = [
+    "include",
+    "${chip_root}/examples/rvc-app/rvc-common/include",
+    "${chip_root}/examples/rvc-app/rvc-common/third_party",
+  ]
+
+  output_dir = root_out_dir
+
+  cflags = [
+    "-Wno-implicit-int-conversion",
+    "-Wno-sign-compare",
+    "-D__ARM_NEON_FP=0",
+  ]
+}
+
+# Test executable for int8 quantized training
+executable("test-int8-training") {
+  sources = [
+    "${chip_root}/examples/rvc-app/rvc-common/src/RvcAIInterface.cpp",
+    "${chip_root}/examples/rvc-app/rvc-common/src/RvcAITrainer.cpp",
+    "test_int8_training.cpp",
+  ]
+
+  deps = [
+    "${chip_root}/third_party/tflite-micro:tflite_micro",
+  ]
+
+  include_dirs = [
+    "include",
+    "${chip_root}/examples/rvc-app/rvc-common/include",
+    "${chip_root}/examples/rvc-app/rvc-common/third_party",
+  ]
+
+  output_dir = root_out_dir
+
+  cflags = [
+    "-Wno-implicit-int-conversion",
+    "-Wno-sign-compare",
+    "-D__ARM_NEON_FP=0",
+  ]
+}
+
+group("tests") {
+  deps = [
+    ":test-rvc-training",
+    ":inspect-tensors",
+    ":debug-weights",
+    ":test-int8-training",
+  ]
 }
 
 group("default") {

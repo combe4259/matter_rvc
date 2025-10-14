@@ -19,6 +19,11 @@ public:
     // Returns true on success
     bool InitAI();
     void RunInferenceLoop();
+    void RunSingleInference();
+
+    // Expose internals for RvcAITrainer
+    tflite::MicroInterpreter* GetInterpreter() { return mInterpreter.get(); }
+    TfLiteTensor* GetOutputTensor() { return mOutputTensor; }
 
 private:
     const tflite::Model* mModel;
@@ -27,12 +32,13 @@ private:
     TfLiteTensor* mOutputTensor;
 
     // Using a unique_ptr for the resolver to manage its lifecycle
-    std::unique_ptr<tflite::MicroMutableOpResolver<10> > mResolver;
+    std::unique_ptr<tflite::MicroMutableOpResolver<14> > mResolver;
 
     // A memory buffer for TFLM to use for input, output, and intermediate arrays.
     std::unique_ptr<uint8_t[]> mTensorArena;
     
     // NOTE: This size will need to be tuned for the specific model.
-    // A 1MB arena is a good starting point for a YOLO model.
-    static constexpr int kTensorArenaSize = 1024 * 1024;
+    // YOLOv8n requires approximately 5MB arena for inference only.
+    // With preserve_all_tensors enabled, it requires ~70MB for training.
+    static constexpr int kTensorArenaSize = 80 * 1024 * 1024;  // 80MB for training
 };

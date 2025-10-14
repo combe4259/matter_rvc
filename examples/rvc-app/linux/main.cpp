@@ -20,6 +20,7 @@
 #include <AppMain.h>
 #include <iostream>
 #include "../../rvc-common/include/RvcAIInterface.h"
+#include "../../rvc-common/include/RvcAITrainer.h"
 
 #include <string>
 
@@ -35,6 +36,8 @@ RvcAppCommandDelegate sRvcAppCommandDelegate;
 } // namespace
 
 RvcDevice * gRvcDevice = nullptr;
+RvcAIInterface * gAiInterface = nullptr;
+RvcAITrainer * gAiTrainer = nullptr;
 
 void ApplicationInit()
 {
@@ -51,19 +54,48 @@ void ApplicationInit()
 
     sRvcAppCommandDelegate.SetRvcDevice(gRvcDevice);
 
-    // Initialize and run the On-Device AI interface
-    RvcAIInterface aiInterface;
-    if (!aiInterface.InitAI())
+    // Initialize the On-Device AI interface
+    gAiInterface = new RvcAIInterface();
+    if (!gAiInterface->InitAI())
     {
         std::cerr << "FATAL ERROR: Failed to initialize AI Interface." << std::endl;
+        return;
     }
-    aiInterface.RunInferenceLoop();
+
+    // Initialize the AI Trainer for on-device learning
+    gAiTrainer = new RvcAITrainer();
+    if (!gAiTrainer->AttachInferenceEngine(gAiInterface))
+    {
+        std::cerr << "WARNING: Failed to attach trainer to inference engine." << std::endl;
+    }
+    else
+    {
+        std::cout << "\n=== Testing Transfer Learning Capabilities ===" << std::endl;
+
+        // Test: Get current weights
+        size_t weight_count;
+        gAiTrainer->GetLastLayerWeights(nullptr, &weight_count);
+        std::cout << "Last layer has " << weight_count << " weights." << std::endl;
+
+        // TODO: In future, this is where we'll integrate with Flower
+        // For now, we just verify the infrastructure works
+        std::cout << "=== Trainer ready for Federated Learning ===" << std::endl << std::endl;
+    }
+
+    // Run inference loop (this will run continuously)
+    gAiInterface->RunInferenceLoop();
 }
 
 void ApplicationShutdown()
 {
     delete gRvcDevice;
     gRvcDevice = nullptr;
+
+    delete gAiTrainer;
+    gAiTrainer = nullptr;
+
+    delete gAiInterface;
+    gAiInterface = nullptr;
 
     sChipNamedPipeCommands.Stop();
 }

@@ -13,6 +13,8 @@
 #include <iostream>
 #include <vector>
 #include <algorithm> // For std::max_element
+#include <thread>
+#include <chrono>
 
 // Simple structure to hold detection results
 struct BoundingBox {
@@ -37,19 +39,31 @@ bool RvcAIInterface::InitAI()
     mModel = tflite::GetModel(yolov8n_full_integer_quant_tflite);
     if (mModel->version() != TFLITE_SCHEMA_VERSION) { std::cerr << "Error: Model schema version mismatch." << std::endl; return false; }
 
-    mResolver = std::make_unique<tflite::MicroMutableOpResolver<10>>();
-    mResolver->AddConv2D();
-    mResolver->AddDepthwiseConv2D();
-    mResolver->AddFullyConnected();
-    mResolver->AddMaxPool2D();
-    mResolver->AddSoftmax();
+    mResolver = std::make_unique<tflite::MicroMutableOpResolver<14>>();
     mResolver->AddAdd();
+    mResolver->AddConcatenation();
+    mResolver->AddConv2D();
+    mResolver->AddLogistic();
+    mResolver->AddMaxPool2D();
+    mResolver->AddMul();
+    mResolver->AddPad();
+    mResolver->AddQuantize();
     mResolver->AddReshape();
-    mResolver->AddDequantize();
+    mResolver->AddResizeNearestNeighbor();
+    mResolver->AddSoftmax();
+    mResolver->AddStridedSlice();
+    mResolver->AddSub();
+    mResolver->AddTranspose();
     mTensorArena = std::make_unique<uint8_t[]>(kTensorArenaSize);
     if (!mTensorArena) { std::cerr << "Error: Failed to allocate tensor arena." << std::endl; return false; }
 
-    mInterpreter = std::make_unique<tflite::MicroInterpreter>(mModel, *mResolver, mTensorArena.get(), kTensorArenaSize);
+    // Enable preserve_all_tensors so we can access weight tensors for training
+    mInterpreter = std::make_unique<tflite::MicroInterpreter>(
+        mModel, *mResolver, mTensorArena.get(), kTensorArenaSize,
+        nullptr,  // resource_variables
+        nullptr,  // profiler
+        true      // preserve_all_tensors - CRITICAL for accessing weights!
+    );
     if (mInterpreter->AllocateTensors() != kTfLiteOk) { std::cerr << "Error: AllocateTensors() failed." << std::endl; return false; }
 
     mInputTensor = mInterpreter->input(0);
@@ -65,8 +79,22 @@ void RvcAIInterface::RunInferenceLoop()
 {
     if (!mInterpreter || !mInputTensor) { std::cerr << "Error: Interpreter not initialized." << std::endl; return; }
 
+    std::cout << "Starting continuous AI inference loop..." << std::endl;
+    
+    while (true) {
+        RunSingleInference();
+        
+        // Wait 5 seconds before next inference
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+    }
+}
+
+void RvcAIInterface::RunSingleInference()
+{
+    if (!mInterpreter || !mInputTensor) { std::cerr << "Error: Interpreter not initialized." << std::endl; return; }
+
     // 1. Decode Image
-    std::string image_path = "test_data/000000000009.jpg";
+    std::string image_path = "examples/rvc-app/linux/test_data/000000000009.jpg";
     int original_width, original_height, original_channels;
     unsigned char *img_original = stbi_load(image_path.c_str(), &original_width, &original_height, &original_channels, 3);
     if (img_original == nullptr) { std::cerr << "Error: Failed to load image: " << image_path << std::endl; return; }
